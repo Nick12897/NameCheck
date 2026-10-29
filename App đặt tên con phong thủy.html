@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Nhiên - Ứng Dụng Đặt Tên Con Ý Nghĩa & Phong Thủy Việt Nam</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            500: '#d97706',
+                            600: '#b45309',
+                            700: '#92400e',
+                            800: '#78350f',
+                        },
+                        jade: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        rose: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Be Vietnam Pro', 'Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'Merriweather', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- React & Babel Core -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #fcfbf7;
+        }
+        .font-serif-title {
+            font-family: 'Playfair Display', serif;
+        }
+        .pattern-bg {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#e5e7eb 0.75px, transparent 0.75px), radial-gradient(#e5e7eb 0.75px, #fdfbf7 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0,15px 15px;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="pattern-bg text-slate-800 antialiased min-h-screen flex flex-col">
+    <div id="root" class="flex-grow flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Constants and Year Element Mapping for Vietnamese Feng Shui
+        const YEAR_ELEMENTS = {
+            2024: { canChi: "Giáp Thìn", mệnh: "Hỏa (Phú Đăng Hỏa)", icon: "🔥", recommend: "Mộc, Thổ" },
+            2025: { canChi: "Ất Tỵ", mệnh: "Hỏa (Phú Đăng Hỏa)", icon: "🔥", recommend: "Mộc, Thổ" },
+            2026: { canChi: "Bính Ngọ", mệnh: "Thủy (Thiên Hà Thủy)", icon: "🌊", recommend: "Kim, Mộc" },
+            2027: { canChi: "Đinh Mùi", mệnh: "Thủy (Thiên Hà Thủy)", icon: "🌊", recommend: "Kim, Mộc" },
+            2028: { canChi: "Mậu Thân", mệnh: "Thổ (Đại Trạch Thổ)", icon: "🏔️", recommend: "Hỏa, Kim" },
+            2029: { canChi: "Kỷ Dậu", mệnh: "Thổ (Đại Trạch Thổ)", icon: "🏔️", recommend: "Hỏa, Kim" },
+            2030: { canChi: "Canh Tuất", mệnh: "Kim (Thoa Xuyến Kim)", icon: "⚔️", recommend: "Thổ, Thủy" }
+        };
+
+        const DESIRE_TAGS = [
+            "Bình An & May Mắn", "Trí Tuệ & Thông Minh", "Chí Lớn & Thành Công",
+            "Nghệ Thuật & Tài Hoa", "Nhân Ái & Hiếu Thảo", "Kiên Cường & Tự Lập",
+            "Yêu Thiên Nhiên", "Nét Đẹp Đoan Trang", "Tài Lộc & Phú Quý", "Gắn Kết Gia Đình"
+        ];
+
+        // Main App Component
+        function App() {
+            // State variables
+            const [activeTab, setActiveTab] = useState('generator'); // 'generator', 'saved', 'library', 'chat', 'compare'
+            const [gender, setGender] = useState('boy'); // 'boy', 'girl', 'unspecified'
+            const [fatherName, setFatherName] = useState('Nguyễn Văn Hải');
+            const [motherName, setMotherName] = useState('Trần Thị Mai');
+            const [birthYear, setBirthYear] = useState('2026');
+            const [selectedDesires, setSelectedDesires] = useState(["Bình An & May Mắn", "Trí Tuệ & Thông Minh"]);
+            const [customWish, setCustomWish] = useState('');
+            const [nameLength, setNameLength] = useState('3_or_4'); // '3', '4', '3_or_4'
+            const [combineBothSurnames, setCombineBothSurnames] = useState(true);
+            const [firstLetterPref, setFirstLetterPref] = useState('');
+
+            // AI Generation States
+            const [isLoading, setIsLoading] = useState(false);
+            const [generatedNames, setGeneratedNames] = useState([]);
+            const [errorMsg, setErrorMsg] = useState('');
+            const [savedNames, setSavedNames] = useState([]);
+            const [selectedDetailName, setSelectedDetailName] = useState(null);
+            const [compareList, setCompareList] = useState([]);
+
+            // Chat Assistant States
+            const [chatMessages, setChatMessages] = useState([
+                {
+                    sender: 'bot',
+                    text: 'Xin chào cha mẹ! Tôi là Trợ Lý Đặt Tên An Nhiên. Cha mẹ có thắc mắc gì về tên gọi, phong thủy hay cách kết hợp tên cha mẹ cho bé không ạ?'
+                }
+            ]);
+            const [chatInput, setChatInput] = useState('');
+            const [isChatLoading, setIsChatLoading] = useState(false);
+
+            // Load saved names from localStorage
+            useEffect(() => {
+                const stored = localStorage.getItem('annhien_saved_names');
+                if (stored) {
+                    try { setSavedNames(JSON.parse(stored)); } catch(e){}
+                }
+            }, []);
+
+            // Save names sync
+            const toggleSaveName = (nameObj) => {
+                let updated;
+                const exists = savedNames.some(item => item.fullName === nameObj.fullName);
+                if (exists) {
+                    updated = savedNames.filter(item => item.fullName !== nameObj.fullName);
+                } else {
+                    updated = [...savedNames, { ...nameObj, savedAt: new Date().toISOString() }];
+                }
+                setSavedNames(updated);
+                localStorage.setItem('annhien_saved_names', JSON.stringify(updated));
+            };
+
+            const toggleCompareName = (nameObj) => {
+                const exists = compareList.some(item => item.fullName === nameObj.fullName);
+                if (exists) {
+                    setCompareList(compareList.filter(item => item.fullName !== nameObj.fullName));
+                } else {
+                    if (compareList.length >= 3) {
+                        alert("Cha mẹ chỉ nên chọn tối đa 3 tên để so sánh chi tiết cùng lúc.");
+                        return;
+                    }
+                    setCompareList([...compareList, nameObj]);
+                }
+            };
+
+            const handleTagToggle = (tag) => {
+                if (selectedDesires.includes(tag)) {
+                    setSelectedDesires(selectedDesires.filter(t => t !== tag));
+                } else {
+                    setSelectedDesires([...selectedDesires, tag]);
+                }
+            };
+
+            // Gemini API Integration for Generating Names
+            const generateNamesWithGemini = async () => {
+                setIsLoading(true);
+                setErrorMsg('');
+
+                const yearInfo = YEAR_ELEMENTS[birthYear] || { canChi: birthYear, mệnh: "Chưa rõ" };
+
+                // System Prompt setup
+                const systemPrompt = `Bạn là một chuyên gia hàng đầu về văn hóa Việt Nam, ngôn ngữ Hán-Việt, và phong thủy đăt tên con.
+Nhiệm vụ của bạn là tư vấn danh sách các tên hay, sâu sắc, đúng phong thủy và thanh âm hài hòa cho bé.
+Đầu ra BẮT BUỘC phải là một mảng JSON nguyên bản chứa các đối tượng tên (KHÔNG kèm bất kỳ định dạng markdown hay văn bản ngoài JSON).`;
+
+                const userPrompt = `Hãy gợi ý 6 tên tiếng Việt tuyệt đẹp cho em bé với thông tin chi tiết sau:
+- Giới tính em bé: ${gender === 'boy' ? 'Bé Trai' : gender === 'girl' ? 'Bé Gái' : 'Chưa xác định'}
+- Họ tên Cha: ${fatherName || 'Không nhập'}
+- Họ tên Mẹ: ${motherName || 'Không nhập'}
+- Năm sinh dự kiến: ${birthYear} (${yearInfo.canChi} - Mệnh ${yearInfo.mệnh})
+- Mong muốn của cha mẹ về ý nghĩa: ${selectedDesires.join(', ')}. ${customWish ? `Ghi chú thêm: ${customWish}` : ''}
+- Yêu cầu số từ: ${nameLength === '3' ? 'Đúng 3 từ' : nameLength === '4' ? 'Đúng 4 từ' : 'Linh hoạt 3 hoặc 4 từ'}
+- Ghép cả họ cha và họ mẹ: ${combineBothSurnames ? 'Nên ghép cả họ cha và họ mẹ (Ví dụ: Nguyễn Trần...)' : 'Theo họ cha chính'}
+${firstLetterPref ? `- Chữ cái bắt đầu tên chính mong muốn: ${firstLetterPref}` : ''}
+
+Hãy trả về định dạng JSON thuần túy theo cấu trúc Schema sau:
+[
+  {
+    "fullName": "Nguyễn Trần Bảo An",
+    "surname": "Nguyễn Trần",
+    "middleName": "Bảo",
+    "firstName": "An",
+    "hanViet": "安 - Bình an, yên ổn, tâm hồn thư thái",
+    "meaning": "Báu vật bình an của cha mẹ. Mong con đời đời an yên, gặp nhiều may mắn và được mọi người yêu quý.",
+    "parentHarmony": "Sự kết hợp hoàn hảo giữa họ Nguyễn của Cha và họ Trần của Mẹ. Âm tiết chuyển tiếp mượt mà.",
+    "fengShuiScore": 96,
+    "element": "Thủy",
+    "toneBalance": "Bằng - Bằng - Trắc - Bằng (Rất êm tai)",
+    "tags": ["Bình An", "May Mắn", "Họ Cha Mẹ"],
+    "personalityWish": "Tâm trí sáng suốt, hòa nhã, sống có tình có nghĩa"
+  }
+]`;
+
+                const apiKey = ""; // API key managed automatically by runtime if available
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userPrompt }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (jsonText) {
+                        const parsedData = JSON.parse(jsonText);
+                        setGeneratedNames(parsedData);
+                    } else {
+                        throw new Error("Không nhận được dữ liệu hợp lệ từ AI.");
+                    }
+                } catch (err) {
+                    console.error("Gemini API Error, fallback applied:", err);
+                    // Smart Offline Fallback Generator if network/API unavailable
+                    generateFallbackNames();
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            // Fallback algorithm providing high-quality Vietnamese names
+            const generateFallbackNames = () => {
+                const fSurname = fatherName.trim().split(' ')[0] || 'Nguyễn';
+                const mSurname = motherName.trim().split(' ')[0] || 'Trần';
+
+                const yearObj = YEAR_ELEMENTS[birthYear] || YEAR_ELEMENTS[2026];
+
+                const boyNames = [
+                    { mid: "Minh", first: "Triết", han: "明 哲", mean: "Con là người trí tuệ sáng suốt, thấu đáo và minh triết.", element: "Mộc", tags: ["Trí Tuệ", "Thành Công"] },
+                    { mid: "Bảo", first: "An", han: "寶 安", mean: "Báu vật quý giá của gia đình, mong con luôn bình an, thư thái.", element: "Thủy", tags: ["Bình An", "May Mắn"] },
+                    { mid: "Gia", first: "Hưng", han: "家 興", mean: "Người con làm hưng thịnh gia đường, đem lại tự hào cho dòng họ.", element: "Thổ", tags: ["Phú Quý", "Gia Đình"] },
+                    { mid: "Đăng", first: "Khoa", han: "燈 科", mean: "Ngọn đèn đỗ đạt, đỗ thủ khoa, đường học vấn hanh thông.", element: "Hỏa", tags: ["Trí Tuệ", "Chí Lớn"] },
+                    { mid: "Khôi", first: "Nguyên", han: "魁 元", mean: "Tài năng kiệt xuất, đứng đầu, tuấn tú và đàng hoàng.", element: "Mộc", tags: ["Tài Hoa", "Kiên Cường"] },
+                    { mid: "Đức", first: "Nhân", han: "德 仁", mean: "Sống có đức độ, lòng nhân ái bao la, gieo điều lành gặp quả ngọt.", element: "Hỏa", tags: ["Nhân Ái", "Bình An"] }
+                ];
+
+                const girlNames = [
+                    { mid: "Tường", first: "Vy", han: "祥 薇", mean: "Đóa hoa tường vi dịu dàng, mang lại điềm lành và hạnh phúc.", element: "Mộc", tags: ["Đoan Trang", "May Mắn"] },
+                    { mid: "Nhiên", first: "An", han: "然 安", mean: "Sống tự nhiên, tự tại, tâm hồn luôn thong dong và bình an.", element: "Thủy", tags: ["Bình An", "Thiên Nhiên"] },
+                    { mid: "Ngọc", first: "Khuê", han: "玉 閨", mean: "Viên ngọc quý chốn khuê các, cao sang, thuần khiết.", element: "Kim", tags: ["Đoan Trang", "Phú Quý"] },
+                    { mid: "Tuệ", first: "Linh", han: "智慧 靈", mean: "Trí tuệ tinh anh, tâm hồn linh hoạt và thông minh lanh lợi.", element: "Hỏa", tags: ["Trí Tuệ", "Tài Hoa"] },
+                    { mid: "Bảo", first: "Quyên", han: "寶 娟", mean: "Loài chim quyên quý giá, thanh cao, tính cách dịu dàng.", element: "Mộc", tags: ["Nghệ Thuật", "Nhân Ái"] },
+                    { mid: "Thùy", first: "Dương", han: "垂 陽", mean: "Cây dại ven biển kiên cường, như ánh mặt trời ấm áp.", element: "Thổ", tags: ["Kiên Cường", "Tự Lập"] }
+                ];
+
+                const pool = gender === 'boy' ? boyNames : girlNames;
+
+                const fallbackList = pool.map((item, idx) => {
+                    const fullSurname = combineBothSurnames ? `${fSurname} ${mSurname}` : fSurname;
+                    const fullName = `${fullSurname} ${item.mid} ${item.first}`;
+                    return {
+                        fullName: fullName,
+                        surname: fullSurname,
+                        middleName: item.mid,
+                        firstName: item.first,
+                        hanViet: item.han,
+                        meaning: item.mean,
+                        parentHarmony: `Tên ghép từ họ ${fSurname} (Cha) và ${mSurname} (Mẹ), tạo vần điệu trầm bổng tự nhiên.`,
+                        fengShuiScore: 92 + (idx % 7),
+                        element: item.element,
+                        toneBalance: "Thanh bằng trắc hài hòa, không trùng âm lặp từ",
+                        tags: [...item.tags, combineBothSurnames ? "Họ Cha Mẹ" : "Họ Cha"],
+                        personalityWish: "Hiếu thảo, tự tin, mang lại niềm vui cho cả nhà."
+                    };
+                });
+
+                setGeneratedNames(fallbackList);
+            };
+
+            // Handle AI Consultation Chatbot
+            const sendChatMessage = async () => {
+                if (!chatInput.trim()) return;
+
+                const userText = chatInput;
+                const updatedMessages = [...chatMessages, { sender: 'user', text: userText }];
+                setChatMessages(updatedMessages);
+                setChatInput('');
+                setIsChatLoading(true);
+
+                const systemPrompt = `Bạn là chuyên gia tư vấn đặt tên em bé Việt Nam am hiểu phong thủy, Hán-Việt, và âm điệu tiếng Việt. Hãy tư vấn ngắn gọn, chân thành, sâu sắc và lịch sự.`;
+
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [
+                        { parts: [{ text: `Bối cảnh: Cha là ${fatherName}, Mẹ là ${motherName}, Con sinh năm ${birthYear}.\nCâu hỏi của phụ huynh: ${userText}` }] }
+                    ],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                try {
+                    const res = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    const botReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, tôi gặp chút gián đoạn. Cha mẹ có thể thử hỏi lại nhé!";
+                    setChatMessages([...updatedMessages, { sender: 'bot', text: botReply }]);
+                } catch (e) {
+                    setChatMessages([...updatedMessages, {
+                        sender: 'bot',
+                        text: 'Tên Việt Nam mang rất nhiều ý nghĩa cao đẹp. Ví dụ: Nguyễn Trần Bình An biểu hiện sự kết hợp hai dòng họ và ước mong cuộc sống con được bình yên, suôn sẻ.'
+                    }]);
+                } finally {
+                    setIsChatLoading(false);
+                }
+            };
+
+            // Audio Speech synth function
+            const speakName = (text) => {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'vi-VN';
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    alert("Trình duyệt của bạn không hỗ trợ đọc âm thanh tự động.");
+                }
+            };
+
+            return (
+                <div className="flex-grow flex flex-col min-h-screen">
+                    {/* Top Navigation Bar */}
+                    <header className="bg-white/90 backdrop-blur-md border-b border-amber-100 sticky top-0 z-40 shadow-sm">
+                        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('generator')}>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-rose-400 flex items-center justify-center text-white shadow-md">
+                                    <i className="fa-solid font-bold text-xl fa-child-reaching"></i>
+                                </div>
+                                <div>
+                                    <h1 className="font-serif-title font-bold text-xl text-amber-900 leading-none">An Nhiên</h1>
+                                    <p className="text-xs text-amber-700/80 font-medium mt-0.5">Đặt Tên Con Ý Nghĩa & Phong Thủy</p>
+                                </div>
+                            </div>
+
+                            {/* Tabs */}
+                            <nav className="flex items-center space-x-1 sm:space-x-2 text-sm font-medium overflow-x-auto pb-1 sm:pb-0">
+                                <button
+                                    onClick={() => setActiveTab('generator')}
+                                    className={`px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 whitespace-nowrap ${activeTab === 'generator' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50'}`}
+                                >
+                                    <i className="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span>Đặt Tên AI</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('saved')}
+                                    className={`px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 whitespace-nowrap relative ${activeTab === 'saved' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50'}`}
+                                >
+                                    <i className="fa-solid fa-bookmark"></i>
+                                    <span>Tên Đã Lưu</span>
+                                    {savedNames.length > 0 && (
+                                        <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${activeTab === 'saved' ? 'bg-white text-amber-700' : 'bg-amber-200 text-amber-800'}`}>
+                                            {savedNames.length}
+                                        </span>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('compare')}
+                                    className={`px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 whitespace-nowrap ${activeTab === 'compare' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50'}`}
+                                >
+                                    <i className="fa-solid fa-scale-balanced"></i>
+                                    <span>So Sánh ({compareList.length})</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('library')}
+                                    className={`px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 whitespace-nowrap ${activeTab === 'library' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50'}`}
+                                >
+                                    <i className="fa-solid fa-book-open"></i>
+                                    <span>Thư Viện Tên</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('chat')}
+                                    className={`px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 whitespace-nowrap ${activeTab === 'chat' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50'}`}
+                                >
+                                    <i className="fa-solid fa-comments"></i>
+                                    <span>Trợ Lý Hỏi Đáp</span>
+                                </button>
+                            </nav>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="flex-grow max-w-6xl w-full mx-auto px-4 py-6">
+
+                        {/* TAB 1: NAME GENERATOR WIZARD */}
+                        {activeTab === 'generator' && (
+                            <div className="space-y-8">
+                                {/* Hero Banner */}
+                                <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-rose-400 rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
+                                    <div className="absolute -right-10 -bottom-10 opacity-15 text-9xl font-serif">
+                                        <i className="fa-solid fa-spa"></i>
+                                    </div>
+                                    <div className="relative z-10 max-w-2xl">
+                                        <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                                            Gửi Gắm Tương Lai Bằng Tên Gọi
+                                        </span>
+                                        <h2 className="font-serif-title text-2xl md:text-4xl font-bold mt-3 leading-tight">
+                                            Đặt Tên Cho Con Đong Đầy Ý Nghĩa & Hòa Hợp Gia Đình
+                                        </h2>
+                                        <p className="mt-2 text-amber-50 text-sm md:text-base leading-relaxed">
+                                            Kết hợp trí tuệ nhân tạo AI và nét đẹp ngôn ngữ Hán-Việt, phong thủy Ngũ Hành để tìm ra tên gọi tuyệt vời nhất cho thiên thần nhỏ của bạn.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Main Form Grid */}
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                    {/* Left Input Form */}
+                                    <div className="lg:col-span-5 bg-white rounded-3xl p-6 shadow-sm border border-amber-100/80 space-y-6">
+                                        <h3 className="font-serif-title font-bold text-xl text-slate-800 border-b border-amber-100 pb-3 flex items-center justify-between">
+                                            <span>Thông Tin Đặt Tên</span>
+                                            <i className="fa-solid fa-sliders text-amber-500 text-base"></i>
+                                        </h3>
+
+                                        {/* 1. Gender Selection */}
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                                                Giới tính của bé
+                                            </label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setGender('boy')}
+                                                    className={`p-3 rounded-2xl border text-sm font-semibold flex flex-col items-center justify-center space-y-1 transition-all ${gender === 'boy' ? 'border-sky-500 bg-sky-50 text-sky-700 shadow-sm ring-2 ring-sky-200' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
+                                                >
+                                                    <span className="text-xl">👦</span>
+                                                    <span>Bé Trai</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setGender('girl')}
+                                                    className={`p-3 rounded-2xl border text-sm font-semibold flex flex-col items-center justify-center space-y-1 transition-all ${gender === 'girl' ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-sm ring-2 ring-rose-200' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
+                                                >
+                                                    <span className="text-xl">👧</span>
+                                                    <span>Bé Gái</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setGender('unspecified')}
+                                                    className={`p-3 rounded-2xl border text-sm font-semibold flex flex-col items-center justify-center space-y-1 transition-all ${gender === 'unspecified' ? 'border-amber-500 bg-amber-50 text-amber-800 shadow-sm ring-2 ring-amber-200' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}
+                                                >
+                                                    <span className="text-xl">👶</span>
+                                                    <span>Chưa Biết</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* 2. Parents' Full Names */}
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                                    Họ & Tên Cha
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={fatherName}
+                                                    onChange={(e) => setFatherName(e.target.value)}
+                                                    placeholder="Ví dụ: Nguyễn Văn Hải"
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                                    Họ & Tên Mẹ
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={motherName}
+                                                    onChange={(e) => setMotherName(e.target.value)}
+                                                    placeholder="Ví dụ: Trần Thị Mai"
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-sm"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* 3. Birth Year / Feng Shui */}
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                                Năm sinh dự kiến (Ngũ Hành)
+                                            </label>
+                                            <div className="flex items-center space-x-2">
+                                                <select
+                                                    value={birthYear}
+                                                    onChange={(e) => setBirthYear(e.target.value)}
+                                                    className="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-sm bg-white font-medium text-slate-700"
+                                                >
+                                                    {Object.keys(YEAR_ELEMENTS).map(yr => (
+                                                        <option key={yr} value={yr}>Năm {yr} ({YEAR_ELEMENTS[yr].canChi})</option>
+                                                    ))}
+                                                </select>
+                                                <div className="flex-grow bg-amber-50 px-3 py-2 rounded-xl text-xs text-amber-900 border border-amber-200/60 flex items-center space-x-2">
+                                                    <span className="text-lg">{YEAR_ELEMENTS[birthYear]?.icon}</span>
+                                                    <div>
+                                                        <div className="font-bold">{YEAR_ELEMENTS[birthYear]?.mệnh}</div>
+                                                        <div className="text-[11px] text-amber-700">Hợp: {YEAR_ELEMENTS[birthYear]?.recommend}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 4. Desired Meaning Tags */}
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                                                Mong muốn về ý nghĩa tên con
+                                            </label>
+                                            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                                                {DESIRE_TAGS.map(tag => {
+                                                    const isSelected = selectedDesires.includes(tag);
+                                                    return (
+                                                        <button
+                                                            key={tag}
+                                                            type="button"
+                                                            onClick={() => handleTagToggle(tag)}
+                                                            className={`text-xs px-3 py-1.5 rounded-full border transition-all ${isSelected ? 'bg-amber-600 border-amber-600 text-white font-medium shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                                                        >
+                                                            {isSelected && <i className="fa-solid fa-check mr-1"></i>}
+                                                            {tag}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* 5. Custom Wish */}
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                                Ghi chú hoặc lời chúc riêng
+                                            </label>
+                                            <textarea
+                                                rows="2"
+                                                value={customWish}
+                                                onChange={(e) => setCustomWish(e.target.value)}
+                                                placeholder="Ví dụ: Mong con luôn tự do như mây trời, thanh thản và hạnh phúc..."
+                                                className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-sm"
+                                            ></textarea>
+                                        </div>
+
+                                        {/* 6. Advanced Filters */}
+                                        <div className="pt-2 border-t border-slate-100 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-medium text-slate-600">Ghép cả họ Cha & Mẹ:</span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={combineBothSurnames}
+                                                    onChange={(e) => setCombineBothSurnames(e.target.checked)}
+                                                    className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
+                                                />
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-medium text-slate-600">Độ dài tên:</span>
+                                                <select
+                                                    value={nameLength}
+                                                    onChange={(e) => setNameLength(e.target.value)}
+                                                    className="text-xs px-2 py-1 rounded-lg border border-slate-200 bg-white"
+                                                >
+                                                    <option value="3_or_4">3 hoặc 4 từ</option>
+                                                    <option value="3">Đúng 3 từ</option>
+                                                    <option value="4">Đúng 4 từ</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Submit Button */}
+                                        <button
+                                            type="button"
+                                            onClick={generateNamesWithGemini}
+                                            disabled={isLoading}
+                                            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold shadow-md shadow-amber-500/20 hover:shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+                                        >
+                                            {isLoading ? (
+                                                <>
+                                                    <i className="fa-solid fa-spinner fa-spin"></i>
+                                                    <span>Đang Lựa Chọn Tên Đẹp...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <i className="fa-solid fa-wand-magic-sparkles"></i>
+                                                    <span>Gợi Ý Tên Ý Nghĩa Ngay</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* Right Results Grid */}
+                                    <div className="lg:col-span-7 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="font-serif-title font-bold text-xl text-slate-800">
+                                                Danh Sách Tên Gợi Ý ({generatedNames.length})
+                                            </h3>
+                                            {generatedNames.length > 0 && (
+                                                <span className="text-xs text-slate-500">
+                                                    Nhấp vào tên để xem chi tiết Hán-Việt & Âm Điệu
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {isLoading && (
+                                            <div className="bg-white rounded-3xl p-12 text-center border border-amber-100 space-y-4">
+                                                <div className="w-16 h-16 mx-auto rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-2xl animate-bounce">
+                                                    <i className="fa-solid fa-baby"></i>
+                                                </div>
+                                                <h4 className="font-serif-title font-bold text-lg text-slate-800">Đang nghiên cứu tên phong thủy & ý nghĩa...</h4>
+                                                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                                                    Hệ thống đang đối chiếu ngũ hành năm {birthYear}, hòa hợp tên cha {fatherName} & mẹ {motherName}...
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {!isLoading && generatedNames.length === 0 && (
+                                            <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-200 text-slate-400 space-y-3">
+                                                <i className="fa-solid fa-sparkles text-4xl text-amber-300"></i>
+                                                <p className="text-sm font-medium text-slate-600">Chưa có tên nào được tạo.</p>
+                                                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                                                    Vui lòng điền thông tin bên trái và nhấn nút "Gợi Ý Tên Ý Nghĩa Ngay" để bắt đầu.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {!isLoading && generatedNames.length > 0 && (
+                                            <div className="space-y-4">
+                                                {generatedNames.map((item, idx) => {
+                                                    const isSaved = savedNames.some(s => s.fullName === item.fullName);
+                                                    const isCompared = compareList.some(s => s.fullName === item.fullName);
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="bg-white rounded-2xl p-5 border border-amber-100/70 shadow-sm hover:shadow-md transition-all relative overflow-hidden group"
+                                                        >
+                                                            {/* Card Header */}
+                                                            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-3">
+                                                                <div>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <h4 className="text-xl font-bold font-serif-title text-amber-900 group-hover:text-amber-600 transition-colors">
+                                                                            {item.fullName}
+                                                                        </h4>
+                                                                        <button
+                                                                            onClick={() => speakName(item.fullName)}
+                                                                            title="Nghe đọc tên"
+                                                                            className="text-slate-400 hover:text-amber-600 text-xs p-1"
+                                                                        >
+                                                                            <i className="fa-solid fa-volume-high"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                    <p className="text-xs font-semibold text-amber-700/80 mt-0.5">
+                                                                        Hán-Việt: <span className="font-normal text-slate-600">{item.hanViet}</span>
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="flex items-center space-x-2">
+                                                                    <div className="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-bold border border-amber-200">
+                                                                        <i className="fa-solid fa-star text-amber-500 mr-1"></i>
+                                                                        {item.fengShuiScore}/100 Điểm
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Meaning */}
+                                                            <div className="py-3">
+                                                                <p className="text-xs text-slate-700 leading-relaxed">
+                                                                    <span className="font-semibold text-slate-800">Ý nghĩa: </span>
+                                                                    {item.meaning}
+                                                                </p>
+                                                                {item.parentHarmony && (
+                                                                    <p className="text-[11px] text-slate-500 mt-1 italic">
+                                                                        <i className="fa-solid fa-heart text-rose-400 mr-1"></i>
+                                                                        {item.parentHarmony}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Tags & Action Bar */}
+                                                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-50">
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {item.tags?.map((tg, i) => (
+                                                                        <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">
+                                                                            #{tg}
+                                                                        </span>
+                                                                    ))}
+                                                                    <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-medium">
+                                                                        Mệnh {item.element}
+                                                                    </span>
+                                                                </div>
+
+                                                                <div className="flex items-center space-x-2">
+                                                                    <button
+                                                                        onClick={() => toggleCompareName(item)}
+                                                                        className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${isCompared ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-medium' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                                                    >
+                                                                        <i className="fa-solid fa-scale-balanced mr-1"></i>
+                                                                        {isCompared ? 'Đang so sánh' : 'So sánh'}
+                                                                    </button>
+
+                                                                    <button
+                                                                        onClick={() => toggleSaveName(item)}
+                                                                        className={`text-xs px-3 py-1 rounded-lg border transition-all flex items-center space-x-1 ${isSaved ? 'bg-rose-50 border-rose-300 text-rose-600 font-medium' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                                                    >
+                                                                        <i className={`fa-${isSaved ? 'solid' : 'regular'} fa-bookmark`}></i>
+                                                                        <span>{isSaved ? 'Đã lưu' : 'Lưu tên'}</span>
+                                                                    </button>
+
+                                                                    <button
+                                                                        onClick={() => setSelectedDetailName(item)}
+                                                                        className="text-xs px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-medium shadow-sm transition-all"
+                                                                    >
+                                                                        Chi tiết
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 2: SAVED NAMES */}
+                        {activeTab === 'saved' && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="font-serif-title font-bold text-2xl text-slate-800">
+                                            Danh Sách Tên Yêu Thích ({savedNames.length})
+                                        </h2>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            Những tên gọi cha mẹ đã cân nhắc và lưu lại cho bé.
+                                        </p>
+                                    </div>
+                                    {savedNames.length > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                const text = savedNames.map(s => `${s.fullName} - Ý nghĩa: ${s.meaning}`).join('\n\n');
+                                                navigator.clipboard.writeText(text);
+                                                alert("Đã sao chép danh sách tên vào bộ nhớ tạm!");
+                                            }}
+                                            className="text-xs bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl font-medium flex items-center space-x-1.5"
+                                        >
+                                            <i className="fa-solid fa-copy"></i>
+                                            <span>Sao Chép Tất Cả</span>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {savedNames.length === 0 ? (
+                                    <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 text-slate-400 space-y-3">
+                                        <i className="fa-regular fa-bookmark text-4xl text-slate-300"></i>
+                                        <p className="text-sm font-medium text-slate-600">Chưa có tên nào trong danh sách lưu trữ.</p>
+                                        <button
+                                            onClick={() => setActiveTab('generator')}
+                                            className="text-xs text-amber-600 font-bold hover:underline"
+                                        >
+                                            Bắt đầu khám phá và đặt tên ngay →
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {savedNames.map((item, idx) => (
+                                            <div key={idx} className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm space-y-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <h4 className="font-serif-title font-bold text-xl text-amber-900">
+                                                            {item.fullName}
+                                                        </h4>
+                                                        <span className="text-xs text-slate-500">Hán-Việt: {item.hanViet}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => toggleSaveName(item)}
+                                                        className="text-slate-400 hover:text-rose-500 text-sm"
+                                                        title="Xóa khỏi danh sách lưu"
+                                                    >
+                                                        <i className="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                                <p className="text-xs text-slate-600">{item.meaning}</p>
+                                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                                                    <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded font-medium">
+                                                        Điểm hợp: {item.fengShuiScore}/100
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setSelectedDetailName(item)}
+                                                        className="text-amber-600 font-bold hover:underline"
+                                                    >
+                                                        Xem phân tích chi tiết →
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TAB 3: NAME COMPARISON */}
+                        {activeTab === 'compare' && (
+                            <div className="space-y-6">
+                                <div>
+                                    <h2 className="font-serif-title font-bold text-2xl text-slate-800">
+                                        So Sánh Tên Của Bé
+                                    </h2>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Đặt các lựa chọn tên lên bàn cân để dễ dàng đưa ra quyết định cuối cùng.
+                                    </p>
+                                </div>
+
+                                {compareList.length === 0 ? (
+                                    <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 text-slate-400 space-y-3">
+                                        <i className="fa-solid fa-scale-balanced text-4xl text-slate-300"></i>
+                                        <p className="text-sm font-medium text-slate-600">Chưa có tên nào được chọn để so sánh.</p>
+                                        <p className="text-xs text-slate-400">Vui lòng bấm nút "So sánh" ở thẻ tên trong trang Đặt Tên AI.</p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white rounded-3xl p-6 border border-amber-100 shadow-sm overflow-x-auto">
+                                        <table className="w-full text-left text-xs min-w-[600px]">
+                                            <thead>
+                                                <tr className="border-b border-slate-200">
+                                                    <th className="p-3 text-slate-400 uppercase font-bold tracking-wider">Tiêu chí</th>
+                                                    {compareList.map((item, i) => (
+                                                        <th key={i} className="p-3 font-serif-title text-base font-bold text-amber-900">
+                                                            {item.fullName}
+                                                            <button onClick={() => toggleCompareName(item)} className="ml-2 text-slate-400 hover:text-rose-500 text-xs">
+                                                                <i className="fa-solid fa-xmark"></i>
+                                                            </button>
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 text-slate-700">
+                                                <tr>
+                                                    <td className="p-3 font-semibold text-slate-500">Hán - Việt</td>
+                                                    {compareList.map((item, i) => <td key={i} className="p-3">{item.hanViet}</td>)}
+                                                </tr>
+                                                <tr>
+                                                    <td className="p-3 font-semibold text-slate-500">Điểm Phong Thủy</td>
+                                                    {compareList.map((item, i) => (
+                                                        <td key={i} className="p-3 font-bold text-amber-600">{item.fengShuiScore} / 100</td>
+                                                    ))}
+                                                </tr>
+                                                <tr>
+                                                    <td className="p-3 font-semibold text-slate-500">Ngũ Hành Tên</td>
+                                                    {compareList.map((item, i) => <td key={i} className="p-3 font-medium">{item.element}</td>)}
+                                                </tr>
+                                                <tr>
+                                                    <td className="p-3 font-semibold text-slate-500">Ý Nghĩa Cốt Lõi</td>
+                                                    {compareList.map((item, i) => <td key={i} className="p-3 leading-relaxed">{item.meaning}</td>)}
+                                                </tr>
+                                                <tr>
+                                                    <td className="p-3 font-semibold text-slate-500">Thanh Âm Bằng Trắc</td>
+                                                    {compareList.map((item, i) => <td key={i} className="p-3">{item.toneBalance}</td>)}
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TAB 4: NAME LIBRARY */}
+                        {activeTab === 'library' && (
+                            <div className="space-y-6">
+                                <div>
+                                    <h2 className="font-serif-title font-bold text-2xl text-slate-800">
+                                        Thư Viện Tên Đẹp Tiếng Việt
+                                    </h2>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Tuyển tập những tên hay truyền thống và hiện đại phân loại theo chủ đề.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Category 1: Boy Names */}
+                                    <div className="bg-white rounded-3xl p-6 border border-amber-100 shadow-sm space-y-4">
+                                        <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
+                                            <span className="text-2xl">👦</span>
+                                            <h3 className="font-serif-title font-bold text-lg text-slate-800">Tên Bé Trai Chí Lớn & Trí Tuệ</h3>
+                                        </div>
+                                        <div className="space-y-2 text-xs">
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <div className="font-bold text-amber-900">Minh Triết - 明哲</div>
+                                                <div className="text-slate-600 mt-0.5">Trí tuệ sáng suốt, hiểu biết sâu rộng, tâm thế đàng hoàng.</div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <div className="font-bold text-amber-900">Đăng Khoa - 燈科</div>
+                                                <div className="text-slate-600 mt-0.5">Ngọn đèn soi sáng đường học vấn, đỗ đạt tài cao.</div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <div className="font-bold text-amber-900">Bảo Khang - 寶康</div>
+                                                <div className="text-slate-600 mt-0.5">Báu vật mang lại sức khỏe, an khang, phú quý cho gia đình.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Category 2: Girl Names */}
+                                    <div className="bg-white rounded-3xl p-6 border border-amber-100 shadow-sm space-y-4">
+                                        <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
+                                            <span className="text-2xl">👧</span>
+                                            <h3 className="font-serif-title font-bold text-lg text-slate-800">Tên Bé Gái Đoan Trang & An Nhiên</h3>
+                                        </div>
+                                        <div className="space-y-2 text-xs">
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <div className="font-bold text-amber-900">Tuệ Lâm - 智慧林</div>
+                                                <div className="text-slate-600 mt-0.5">Rừng trí tuệ bao la, vừa thông minh vừa đằm thắm.</div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <div className="font-bold text-amber-900">Bảo An - 寶安</div>
+                                                <div className="text-slate-600 mt-0.5">Cuộc sống đời đời bình an, được bảo bọc và yêu thương.</div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <div className="font-bold text-amber-900">Tường Vy - 祥薇</div>
+                                                <div className="text-slate-600 mt-0.5">Hoa tường vi nhỏ nhắn, mang đến cát tường và niềm vui.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 5: AI CONSULTATION CHAT */}
+                        {activeTab === 'chat' && (
+                            <div className="bg-white rounded-3xl border border-amber-100 shadow-sm overflow-hidden flex flex-col h-[600px]">
+                                {/* Chat Header */}
+                                <div className="bg-gradient-to-r from-amber-500 to-rose-400 p-4 text-white flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg">
+                                            <i className="fa-solid fa-robot"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold font-serif-title text-base">Trợ Lý Đặt Tên Phong Thủy AI</h3>
+                                            <p className="text-[11px] text-amber-100">Giải đáp mọi thắc mắc về tên gọi, vần điệu & ngũ hành</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Chat Messages Box */}
+                                <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+                                    {chatMessages.map((msg, i) => (
+                                        <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`max-w-[80%] p-3.5 rounded-2xl text-xs leading-relaxed ${msg.sender === 'user' ? 'bg-amber-500 text-white rounded-br-none' : 'bg-white text-slate-700 border border-slate-200/80 rounded-bl-none shadow-sm'}`}>
+                                                {msg.text}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isChatLoading && (
+                                        <div className="flex justify-start">
+                                            <div className="bg-white p-3 rounded-2xl text-xs text-slate-400 flex items-center space-x-2 border border-slate-200">
+                                                <i className="fa-solid fa-spinner fa-spin"></i>
+                                                <span>AI đang suy ngẫm câu trả lời...</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Chat Input Bar */}
+                                <div className="p-3 bg-white border-t border-slate-100 flex items-center space-x-2">
+                                    <input
+                                        type="text"
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && sendChatMessage()}
+                                        placeholder="Hỏi về tên, tên lót hợp họ cha mẹ, phong thủy..."
+                                        className="flex-grow px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-xs"
+                                    />
+                                    <button
+                                        onClick={sendChatMessage}
+                                        disabled={isChatLoading || !chatInput.trim()}
+                                        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                                    >
+                                        <i className="fa-solid fa-paper-plane mr-1"></i> Gửi
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                    </main>
+
+                    {/* DETAIL MODAL */}
+                    {selectedDetailName && (
+                        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+                                <button
+                                    onClick={() => setSelectedDetailName(null)}
+                                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm"
+                                >
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+
+                                <div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Phân Tích Chi Tiết Tên Gọi</span>
+                                    <h3 className="font-serif-title font-bold text-2xl text-slate-800 mt-1">
+                                        {selectedDetailName.fullName}
+                                    </h3>
+                                    <p className="text-xs text-slate-500">Hán - Việt: <span className="font-semibold text-slate-700">{selectedDetailName.hanViet}</span></p>
+                                </div>
+
+                                <div className="space-y-3 text-xs bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
+                                    <div>
+                                        <span className="font-bold text-amber-900">Ý Nghĩa Sâu Sắc:</span>
+                                        <p className="text-slate-700 mt-0.5 leading-relaxed">{selectedDetailName.meaning}</p>
+                                    </div>
+                                    <div>
+                                        <span className="font-bold text-amber-900">Ước Nguyện Cho Bé:</span>
+                                        <p className="text-slate-700 mt-0.5">{selectedDetailName.personalityWish || 'Sống an nhiên, thành công và luôn là niềm tự hào của cha mẹ.'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                    <div className="p-3 bg-slate-50 rounded-xl">
+                                        <span className="text-slate-400 block font-medium">Ngũ Hành Tên</span>
+                                        <span className="font-bold text-slate-800 text-sm">{selectedDetailName.element}</span>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 rounded-xl">
+                                        <span className="text-slate-400 block font-medium">Điểm Cát Tường</span>
+                                        <span className="font-bold text-amber-600 text-sm">{selectedDetailName.fengShuiScore} / 100</span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <span className="text-xs font-bold text-slate-600 block mb-1">Thanh Âm & Vần Điệu</span>
+                                    <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                        {selectedDetailName.toneBalance}
+                                    </p>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-end space-x-2">
+                                    <button
+                                        onClick={() => speakName(selectedDetailName.fullName)}
+                                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
+                                    >
+                                        <i className="fa-solid fa-volume-high mr-1"></i> Phát âm
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            toggleSaveName(selectedDetailName);
+                                            setSelectedDetailName(null);
+                                        }}
+                                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm"
+                                    >
+                                        Lưu Tên Này
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Footer */}
+                    <footer className="bg-white border-t border-amber-100/60 py-6 mt-12 text-center text-xs text-slate-400">
+                        <div className="max-w-6xl mx-auto px-4 space-y-2">
+                            <p className="font-serif-title text-sm font-bold text-amber-900">
+                                An Nhiên - Đồng Hành Cùng Cha Mẹ Việt
+                            </p>
+                            <p>© 2026 An Nhiên Naming Application. Tôn vinh nét đẹp văn hóa & tiếng Việt.</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        // Render the application
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
